@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <style>
+    #list-wrap {
+      position: relative;
+      border: 1px solid;
+      padding: 0 5px;
+    }
+
+    .list-item {
+      border: 1px solid red;
+      left: 0;
+      right: 0;
+      margin-left: 5px;
+      margin-right: 5px;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>img list</h1>
+  <div id="list-wrap">
+  </div>
+  <footer>copyright</footer>
+
+  <script>
+    var listWrap = document.querySelector('#list-wrap')
+
+    var allList = []
+    var itemGap = 5 // 条目之间的间隙，像素
+    var loading = false // 是否正在加载新的数据
+
+    window.addEventListener('scroll', function (e) {
+      // 滚动到底部了
+      console.log('scroll')
+
+      if (document.documentElement.offsetHeight - innerHeight - window.scrollY < 200) {
+        if (loading == false) {
+          loading = true
+          getItems(10, function (items) {
+            loading = false
+            allList.push(...items)
+
+            for (var i = allList.length - items.length; i < allList.length; i++) {
+              var item = allList[i]
+              var prevItem = allList[i - 1] // 拿到前一个条目的信息
+
+              if (i == 0) {
+                prevItem = {
+                  top: 0,
+                  height: 0,
+                }
+              }
+
+              var itemWrap = document.createElement('div')
+              var html = `
+                <div data-id="${item.id}" class="list-item" style="position: absolute;">
+                  <h2>${item.title}</h2>
+                  <p>${item.content}</p>
+                </div>
+              `
+              itemWrap.innerHTML = html
+              var itemEl = itemWrap.firstElementChild
+              item.top = prevItem.top + prevItem.height + itemGap
+              itemEl.style.top = item.top + 'px'
+              listWrap.appendChild(itemEl)
+              item.height = itemEl.offsetHeight
+              listWrap.style.height = item.top + item.height + itemGap + 'px'
+            }
+
+            showVisibleOnly()
+          })
+        }
+      } else {
+        showVisibleOnly()
+      }
+    })
+
+    window.addEventListener('resize', function (e) {
+      listWrap.innerHTML = ''
+      // listWrap.style.height = '0px'
+
+      var y = window.scrollY
+      for (var i = 0; i < allList.length; i++) {
+        var item = allList[i]
+        var prevItem = allList[i - 1] // 拿到前一个条目的信息
+
+        if (i == 0) {
+          prevItem = {
+            top: 0,
+            height: 0,
+          }
+        }
+
+        var itemWrap = document.createElement('div')
+        var html = `
+          <div data-id="${item.id}" class="list-item" style="position: absolute;">
+            <h2>${item.title}</h2>
+            <p>${item.content}</p>
+          </div>
+        `
+        itemWrap.innerHTML = html
+        var itemEl = itemWrap.firstElementChild
+        item.top = prevItem.top + prevItem.height + itemGap
+        itemEl.style.top = item.top + 'px'
+        listWrap.appendChild(itemEl)
+        item.height = itemEl.offsetHeight
+        listWrap.style.height = item.top + item.height + itemGap + 'px'
+      }
+
+      window.scrollTo(0, y)
+
+      showVisibleOnly()
+    })
+
+    window.dispatchEvent(new Event('scroll'))
+
+    function showVisibleOnly() {
+      var visibleItems = allList.filter(it => {
+        return it.top + it.height > window.scrollY && it.top < window.scrollY + window.innerHeight
+      })
+
+      console.log(visibleItems)
+
+      listWrap.innerHTML = ''
+      for (let item of visibleItems) {
+        let wrap = document.createElement('div')
+        wrap.innerHTML = `
+          <div data-id="${item.id}" class="list-item" style="position: absolute; top: ${item.top}px">
+            <h2>${item.title}</h2>
+            <p>${item.content}</p>
+          </div>
+        `
+        listWrap.appendChild(wrap.firstElementChild)
+      }
+    }
+
+    function getItems(num = 10, cb) {
+      var result = []
+      for (var i = 0; i < num; i++) {
+        result.push({
+          id: Math.random().toString().slice(2),
+          title: 'joi jljaf opjw lef h skh ajhf uywe grad sf'.slice(0, Math.floor(Math.random() * 50 + 10)),
+          content: 'Lorem ipsum dolor sit amet consectetur adipisicing elit. Optio unde recusandae ducimus, doloremque repellendus mollitia ab rerum fugiat magnam sint cupiditate distinctio sit ut ratione? Natus expedita sapiente placeat debitis.'.slice(0, Math.floor(30 + Math.random() * 217))
+        })
+      }
+      setTimeout(() => {
+        cb(result)
+      }, 500 + Math.random() * 500 | 0)
+    }
+  </script>
+</body>
+
+</html>
