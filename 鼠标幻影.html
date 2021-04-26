@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <style>
+    span.mouse {
+      width: 10px;
+      height: 10px;
+      background-color: lightcoral;
+      position: fixed;
+    }
+  </style>
+</head>
+
+<body>
+  <script>
+    var ms = []
+    var recycled = []
+    // window.addEventListener('mousemove', e => {
+    //   var span = document.createElement('span')
+    //   span.className = 'mouse'
+    //   span.style.left = e.clientX + 'px'
+    //   span.style.top = e.clientY + 'px'
+    //   document.body.append(span)
+    //   ms.push(span)
+    //   console.log('append')
+
+    //   if (ms.length > 8) {
+    //     console.log('remove')
+    //     var x = ms.shift()
+    //     document.body.removeChild(x)
+    //   }
+
+    //   setTimeout(() => {
+    //     if (ms.includes(span)) {
+    //       ms = ms.filter(it => it !== span)
+    //       document.body.removeChild(span)
+    //     }
+    //   }, 300)
+    // })
+
+    var mx = 0
+    var my = 0
+
+    window.addEventListener('mousemove', e => {
+      console.log('move', Date.now())
+      mx = e.clientX
+      my = e.clientY
+    })
+
+    requestAnimationFrame(function ani() {
+      // console.log('frame', Date.now())
+      console.log(recycled.length)
+      var span = recycled.length == 0 ? document.createElement('span') : recycled.pop()
+      span.className = 'mouse'
+      span.style.left = mx + 'px'
+      span.style.top = my + 'px'
+      document.body.append(span)
+      ms.push(span)
+      // console.log('append')
+
+      if (ms.length > 8) {
+        // console.log('remove')
+        var x = ms.shift()
+        document.body.removeChild(x)
+        recycled.push(x)
+      }
+
+      setTimeout(() => {
+        if (ms.includes(span)) {
+          ms = ms.filter(it => it !== span)
+          document.body.removeChild(span)
+          recycled.push(span)
+        }
+      }, 300)
+
+      requestAnimationFrame(ani)
+    })
+  </script>
+</body>
+
+</html>

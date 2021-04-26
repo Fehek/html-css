@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Weather</title>
+  <script src="https://cdn.staticfile.org/moment.js/2.24.0/moment.js"></script>
+  <style>
+    * {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      line-height: 1.5em;
+      color: #222730;
+      /* background-color: rgba(0, 0, 0, 0.05);
+      box-shadow: 0 0 1px red; */
+    }
+
+    html {
+      background-repeat: no-repeat;
+      height: 100%;
+      background: linear-gradient(to bottom right, #ecf0f1, #00416A);
+      background-attachment: fixed;
+    }
+
+    main {
+      flex-wrap: wrap;
+      display: flex;
+      flex-direction: row;
+      max-width: 1000px;
+      margin: 3em auto;
+    }
+
+    #left {
+      flex-grow: 1;
+      margin-bottom: 3em;
+    }
+
+    #right {
+      flex-grow: 1;
+      margin-top: 1em;
+      margin-bottom: 3em;
+    }
+
+    #refreshTime {
+      color: #e0350b;
+    }
+
+    #position {
+      font-size: 2em;
+      font-weight: bold;
+      margin-bottom: 0.5em;
+    }
+
+    #info.current {
+      display: flex;
+      flex-direction: row;
+    }
+
+    #currentTemp {
+      font-size: 2.5em;
+      margin-bottom: 0.55em;
+    }
+
+    #todayHNL {
+      font-size: 0.9em;
+    }
+
+    #feel {
+      font-weight: bold;
+      color: black;
+    }
+
+    #other {
+      width: 300px;
+      border-left: 2px solid #e0350b;
+      padding-left: 0.3em;
+    }
+
+    .ott {
+      display: inline-block;
+      color: #515463;
+      font-size: 0.75em;
+      margin-left: 0.3em;
+    }
+
+    #title {
+      color: #222730;
+      font-size: 1.5em;
+      font-weight: bold;
+      margin-bottom: 1em;
+    }
+
+    [id^=day] {
+      font-size: 0.9em;
+      color: #282b31;
+      display: flex;
+      align-items: center;
+    }
+
+    .sevenDays {
+      width: 8em;
+    }
+
+    .sevenDaysTempHigh {
+      padding-left: 2em;
+    }
+
+    @media screen and (max-width:1200px) {
+      main {
+        margin-left: 3em;
+      }
+    }
+
+    @media screen and (max-width:380px) {
+      main {
+        margin-left: 3em;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main>
+    <div id="left">
+      <div id="refreshTime"></div>
+      <div id="position"></div>
+      <div id="info.current">
+        <div id="currentWeatherIcon"><img
+            src="https://cdn.jsdelivr.net/gh/klarkzihao/image-upload@master/uPic/2021/01/28/2021-01-28%2015:28-New%20Project.png"
+            alt="weather-icon"></div>
+        <div id="currentTemp"></div>
+      </div>
+      <div id="todayHNL"></div>
+      <div id="fell"></div>
+      <div id="other"></div>
+    </div>
+    <div id="right">
+      <div id="title">7-Days Forecast</div>
+      <div id="day0"></div>
+      <div id="day1"></div>
+      <div id="day2"></div>
+      <div id="day3"></div>
+      <div id="day4"></div>
+      <div id="day5"></div>
+      <div id="day6"></div>
+    </div>
+  </main>
+  <script>
+
+    function KtoC(temperature) {
+      return (temperature - 273.15) | 0
+    }
+
+    function jsonp(url, f) {
+      var functionName = 'JSONP_CALLBACK_' + Date.now()
+      var script = document.createElement('script')
+      script.src = url + '&callback=' + functionName
+      window[functionName] = f
+      document.body.appendChild(script)
+    }
+
+    let a
+    let latitude = 39.991957
+    let longitude = 116.310003
+    navigator.geolocation.getCurrentPosition(function (position) {
+      latitude = position.coords.latitude
+      longitude = position.coords.longitude
+      console.log(latitude, longitude)    //输出地理编码
+
+      let posCity = ''
+      let posDistrict = ''
+      let posAdcode = ''
+      let positionUrl = "https://restapi.amap.com/v3/geocode/regeo?output=json&location=" + longitude + "," + latitude + "&key=9676d872327757425c548bf59ad61c74&extensions=base"
+      // let positionUrl="https://restapi.amap.com/v3/geocode/regeo?output=json&location=116.310003,39.991957&key=9676d872327757425c548bf59ad61c74&extensions=base" //实例url，北京
+      jsonp(positionUrl, function (info) {        //逆地理编码
+        console.log(info.regeocode.addressComponent.city)
+        a = info
+        posDistrict = info.regeocode.addressComponent.district
+        posAdcode = info.regeocode.addressComponent.adcode
+        if (info.regeocode.addressComponent.city[0]) {
+          posCity = info.regeocode.addressComponent.city
+        } else {
+          posCity = info.regeocode.addressComponent.province
+        }
+      })
+
+      let weatherUrl = "https://api.openweathermap.org/data/2.5/onecall?lang=&lat=" + latitude + "&lon=" + longitude + "&exclude=minutely,hourly&appid=b26c6df87fadfb853dae03afdbd7dd78"
+      // let weatherUrl = "https://restapi.amap.com/v3/weather/weatherInfo?city="+ posAdcode+"&key=9676d872327757425c548bf59ad61c74&extensions=all&output=json"
+      jsonp(weatherUrl, function (info) {         //获取当前地理位置天气json
+
+        let html = document.documentElement
+        let position = document.querySelector("#position")
+        let refreshTime = document.querySelector("#refreshTime")
+        let img = document.querySelector("img")
+        let currentTemp = document.querySelector("#currentTemp")
+        let fell = document.querySelector("#fell")
+        let todayHNL = document.querySelector("#todayHNL")
+        let other = document.querySelector("#other")
+        // let day1 = document.querySelector("#day1")
+        let days = document.querySelectorAll("[id^=day]")
+
+        position.innerHTML = `${posCity}, ${posDistrict}`
+        refreshTime.append(moment(info.current.dt * 1000).format("h:mm a, MMM Do"))
+        currentTemp.append(KtoC(info.current.temp) + "°C")
+        todayHNL.innerHTML = `H: ${KtoC(info.daily[0].temp.max)}° L: ${KtoC(info.daily[0].temp.min)}°`
+
+        img.src = "https://openweathermap.org/img/wn/" + info.current.weather[0].icon + "@2x.png"
+
+        let cw = info.current.weather[0].description
+        fell.innerHTML = `Feels like ${KtoC(info.current.feels_like)} °C. ${info.current.weather[0].main}. ${cw.slice(0, 1).toUpperCase()}${cw.slice(1)}`
+        other.innerHTML = `
+            <div class="ott"><b>Pressure</b>: ${info.current.pressure}hPa</div>
+            <div class="ott"><b>Humidity</b>: ${info.current.humidity}%</div>
+            <div class="ott"><b>UV</b>: ${info.current.uvi}</div>
+            <div class="ott"><b>Wind</b>:${info.current.wind_speed}m/s</div>
+            <div class="ott"><b>Clouds</b>: ${info.current.clouds}</div>
+            <div class="ott"><b>Visibility</b>: ${(info.current.visibility / 1000).toFixed(1)}KM</div>
+        `
+
+        // day1.innerHTML = `<img src="https://openweathermap.org/img/wn/${info.daily[0].weather[0].icon}.png">  ${KtoC(info.daily[0].temp.max)}° / ${KtoC(info.daily[0].temp.min)}°`
+        days.forEach((item, i) => {       //7天天气
+          item.innerHTML = `
+          <div class="sevenDays">${moment(info.daily[i].dt * 1000).format("ddd, MMM D")}</div>
+          <img src="https://openweathermap.org/img/wn/${info.daily[i].weather[0].icon}.png" alt="day${i}-icon" height="40">
+          <div class="sevenDaysTempHigh">${KtoC(info.daily[i].temp.max)}°</div>
+          <div class="slash">&nbsp/&nbsp</div>
+          <div class="sevenDaysTempLow">${KtoC(info.daily[i].temp.min)}°<div/>
+          `
+        })
+      })
+
+    });
+
+  </script>
+</body>
+
+</html>
